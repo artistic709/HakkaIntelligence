@@ -90,10 +90,13 @@ contract HakkaIntelligence {
         bool revealed;
         bool claimed;
         uint256 score;
-        uint256[] submissions;
+        uint256[] submission;
     }
 
     mapping(address => Player) public players;
+
+    event Submit(address indexed player, uint256[] submission);
+    event Reveal(address indexed player, uint256 score);
 
     constructor(address[] memory _oracles, address _token, uint256 _ticketPrice, uint256 _periodStart, uint256 _periodStop) public {
         oracles = _oracles;
@@ -121,11 +124,12 @@ contract HakkaIntelligence {
 
         require(now <= periodStart);
         require(submission.length == elementCount);
-        require(player.submissions.length == 0);
+        require(player.submission.length == 0);
         require(calcLength(submission) <= 1e18);
         playerCount += 1;
-        player.submissions = submission;
+        player.submission = submission;
         require(token.transferFrom(msg.sender, address(this), ticketPrice));
+        emit Submit(msg.sender, submission);
     }
 
     function reveal(address _player) public returns (uint256 score) {
@@ -135,9 +139,10 @@ contract HakkaIntelligence {
         require(now >= revealOpen && now <= revealClose);
         revealedCount += 1;
         player.revealed = true;
-        score = innerProduct(answer, player.submissions);
+        score = innerProduct(answer, player.submission);
         player.score = score;
         totalScore = totalScore.add(score);
+        emit Reveal(_player, score);
     }
 
     function claim(address _player) public returns (uint256 amount) {
