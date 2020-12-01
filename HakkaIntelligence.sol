@@ -64,10 +64,9 @@ contract HakkaIntelligence {
     using SafeMath for *;
 
     IERC20 public token;
-    uint256 public ticketPrice;
 
-    uint256 public playerCount;
-    uint256 public revealedCount;
+    uint256 public totalStake;
+    uint256 public revealedStake;
     uint256 public totalScore;
     uint256 public offset;
 
@@ -89,6 +88,7 @@ contract HakkaIntelligence {
     struct Player {
         bool revealed;
         bool claimed;
+        uint256 stake;
         uint256 score;
         uint256[] submission;
     }
@@ -97,12 +97,12 @@ contract HakkaIntelligence {
 
     event Submit(address indexed player, uint256[] submission);
     event Reveal(address indexed player, uint256 score);
+    event Claim(address indexed player, uint256 amount);
 
-    constructor(address[] memory _oracles, address _token, uint256 _ticketPrice, uint256 _periodStart, uint256 _periodStop) public {
+    constructor(address[] memory _oracles, address _token, uint256 _periodStart, uint256 _periodStop) public {
         oracles = _oracles;
         elementCount = _oracles.length;
         token = IERC20(_token);
-        ticketPrice = _ticketPrice;
         periodStart = _periodStart;
         periodStop = _periodStop;
     }
@@ -119,16 +119,19 @@ contract HakkaIntelligence {
             xy = xy.add(vector1[i].mul(vector2[i]));
     }
 
-    function submit(uint256[] memory submission) public {
+    function submit(uint256 stake, uint256[] memory submission) public {
         Player storage player = players[msg.sender];
 
         require(now <= periodStart);
         require(submission.length == elementCount);
         require(player.submission.length == 0);
         require(calcLength(submission) <= 1e18);
-        playerCount += 1;
+
+        totalStake = totalStake.add(stake);
+        player.stake = stake;
+
         player.submission = submission;
-        require(token.transferFrom(msg.sender, address(this), ticketPrice));
+        require(token.transferFrom(msg.sender, address(this), stake));
         emit Submit(msg.sender, submission);
     }
 
@@ -137,11 +140,13 @@ contract HakkaIntelligence {
 
         require(!player.revealed);
         require(now >= revealOpen && now <= revealClose);
-        revealedCount += 1;
+
+        score = innerProduct(answer, player.submission).mul(player.stake);
+        revealedStake = revealedStake.add(player.stake);
         player.revealed = true;
-        score = innerProduct(answer, player.submission);
         player.score = score;
         totalScore = totalScore.add(score);
+
         emit Reveal(_player, score);
     }
 
@@ -154,6 +159,8 @@ contract HakkaIntelligence {
         amount = token.balanceOf(address(this)).mul(player.score).div(totalScore.sub(offset));
         offset = offset.add(player.score);
         require(token.transfer(_player, amount));
+
+        emit Claim(_player, amount);
     }
 
     function proceed() public {
