@@ -188,6 +188,11 @@ contract HakkaIntelligence {
             xy = xy.add(vector1[i].mul(vector2[i]));
     }
 
+    function playerSubmission(address _player) external view returns (uint256[] memory submission) {
+        Player storage player = players[_player];
+        return player.submission;
+    }
+
     function submit(uint256 stake, uint256[] memory submission) public {
         Player storage player = players[msg.sender];
 
