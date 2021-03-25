@@ -215,7 +215,9 @@ contract HakkaIntelligence {
         require(!player.revealed, "revealed");
         require(now >= revealOpen, "not yet");
         require(now <= revealClose, "too late");
-        score = innerProduct(answer, player.submission).mul(player.stake).div(1e36);
+        score = innerProduct(answer, player.submission);
+        score = score.mul(score).div(1e36); //score = score^2
+        score = score.mul(player.stake).div(1e36);
         revealedStake = revealedStake.add(player.stake);
         player.revealed = true;
         player.score = score;
