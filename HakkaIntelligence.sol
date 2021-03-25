@@ -183,7 +183,7 @@ contract HakkaIntelligence {
     }
 
     function innerProduct(uint256[] memory vector1, uint256[] memory vector2) public pure returns (uint256 xy) {
-        require(vector1.length == vector2.length);
+        require(vector1.length == vector2.length, "different dimension");
         for(uint256 i = 0; i < vector1.length; i++)
             xy = xy.add(vector1[i].mul(vector2[i]));
     }
@@ -196,10 +196,10 @@ contract HakkaIntelligence {
     function submit(uint256 stake, uint256[] memory submission) public {
         Player storage player = players[msg.sender];
 
-        require(now <= periodStart);
-        require(submission.length == elementCount);
-        require(player.submission.length == 0);
-        require(calcLength(submission) <= 1e18);
+        require(now <= periodStart, "too late");
+        require(submission.length == elementCount, "invalid input count");
+        require(player.submission.length == 0, "already submitted");
+        require(calcLength(submission) <= 1e18, "invalid input length");
 
         totalStake = totalStake.add(stake);
         player.stake = stake;
@@ -212,9 +212,9 @@ contract HakkaIntelligence {
     function reveal(address _player) public returns (uint256 score) {
         Player storage player = players[_player];
 
-        require(!player.revealed);
-        require(now >= revealOpen && now <= revealClose);
-
+        require(!player.revealed, "revealed");
+        require(now >= revealOpen, "not yet");
+        require(now <= revealClose, "too late");
         score = innerProduct(answer, player.submission).mul(player.stake).div(1e36);
         revealedStake = revealedStake.add(player.stake);
         player.revealed = true;
@@ -227,8 +227,8 @@ contract HakkaIntelligence {
     function claim(address _player) public returns (uint256 amount) {
         Player storage player = players[_player];
 
-        require(now > revealClose);
-        require(!player.claimed);
+        require(now > revealClose, "not yet");
+        require(!player.claimed, "claimed");
         player.claimed = true;
         amount = token.balanceOf(address(this)).mul(player.score).div(totalScore.sub(offset));
         offset = offset.add(player.score);
@@ -239,13 +239,13 @@ contract HakkaIntelligence {
 
     function proceed() public {
         if(priceSnapshot.length == 0) {
-            require(now >= periodStart);
+            require(now >= periodStart, "not yet");
             for(uint256 i = 0; i < elementCount; i++) {
                 priceSnapshot.push(uint256(Oracle(oracles[i]).latestAnswer()));
             }
         }
         else if(answer.length == 0) {
-            require(now >= periodStop);
+            require(now >= periodStop, "not yet");
             uint256[] memory _answer = new uint256[](elementCount);
             for(uint256 i = 0; i < elementCount; i++)
                 _answer[i] = uint256(Oracle(oracles[i]).latestAnswer()).mul(1e18).div(priceSnapshot[i]);
