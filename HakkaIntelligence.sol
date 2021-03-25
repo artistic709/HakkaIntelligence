@@ -241,7 +241,9 @@ contract HakkaIntelligence {
         if(priceSnapshot.length == 0) {
             require(now >= periodStart, "not yet");
             for(uint256 i = 0; i < elementCount; i++) {
-                priceSnapshot.push(uint256(Oracle(oracles[i]).latestAnswer()));
+                uint256 price = uint256(Oracle(oracles[i]).latestAnswer());
+                require(price > 0, "invalid oracle response");
+                priceSnapshot.push(price);
             }
         }
         else if(answer.length == 0) {
