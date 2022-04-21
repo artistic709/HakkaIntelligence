@@ -49,6 +49,10 @@ contract keeper {
         owner = msg.sender;
     }
 
+    function getQueueLength() external view returns (uint256) {
+        return queue.length;
+    }
+
     function register() external payable {
         require(msg.value >= cost);
         queue.push(msg.sender);
