@@ -3,8 +3,9 @@ pragma solidity 0.8.17;
 // SPDX-License-Identifier: UNLICENSED
 
 contract WorldCupOracle {
-    uint public latestAnswer = 1e18;
+    uint public latestAnswer = 1e8;
     string public name;
+    uint8 public constant decimals = 8;
     address owner;
 
     constructor(string memory _name) {
@@ -14,7 +15,7 @@ contract WorldCupOracle {
 
     function setAnswer(uint _latestAnswer) external {
         require(msg.sender == owner);
-        require(_latestAnswer >= 1e18 && _latestAnswer <= 8e18);
+        require(_latestAnswer >= 1e8 && _latestAnswer <= 8e8);
         latestAnswer = _latestAnswer;
     }
 }
