@@ -13,6 +13,11 @@ contract WorldCupOracle {
         name = _name;
     }
 
+    function setName(string memory _name) external {
+        require(msg.sender == owner);
+        name = _name;
+    }
+
     function setAnswer(uint _latestAnswer) external {
         require(msg.sender == owner);
         require(_latestAnswer >= 1e8 && _latestAnswer <= 8e8);
